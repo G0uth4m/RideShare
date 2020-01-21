@@ -31,11 +31,14 @@ def list_rides_between_src_and_dst():
 @app.route('/api/v1/rides/<rideId>', methods=["GET", "POST", "DELETE"])
 def get_details_of_ride_or_join_ride(rideId):
     if request.method == "GET":
-        """TODO :Get details of given rideId"""
+        pass
+        # TODO : Get details of given rideId
     elif request.method == "POST":
-        """ TODO : Join an existing ride"""
+        pass
+        # TODO : Join an existing ride
     elif request.method == "DELETE":
-        """TODO : Delete a given rideId"""
+        pass
+        # TODO : Delete a given rideId
 
 @app.route('/api/v1/db/write', methods=["POST"])
 def write_to_db():
@@ -43,12 +46,14 @@ def write_to_db():
     column = request.get_json(force=True)['column']
     table = request.get_json(force=True)['table']
 
-    # TODO :
+    # TODO : INSERT operations to database
 
 @app.route('/api/v1/db/read', methods=["POST"])
 def read_from_db():
     table = request.get_json(force=True)['table']
     columns = request.get_json(force=True)['columns']
     where = request.get_json(force=True)['where']
+
+    # TODO : Read from table
 
 app.run()
