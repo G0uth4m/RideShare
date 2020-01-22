@@ -24,11 +24,21 @@ def add_user():
         return Response(status=400)
 
 
-
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
 def remove_user(username):
-    pass
-    # TODO : Remove user from database
+    if request.method != "DELETE":
+        return Response(status=405)
+    try:
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        cursor.execute("DELETE FROM users WHERE username=?", (username,))
+        connection.commit()
+        connection.close()
+        return Response(status=200)
+    except:
+        connection.rollback()
+        connection.close()
+        return Response(status=400)
 
 
 @app.route('/api/v1/rides', methods=["POST"])
