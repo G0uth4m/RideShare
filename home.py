@@ -1,4 +1,4 @@
-from flask import Flask, request, abort
+from flask import Flask, request, Response
 import sqlite3
 
 app = Flask(__name__)
@@ -7,19 +7,22 @@ app = Flask(__name__)
 @app.route('/api/v1/users', methods=["PUT"])
 def add_user():
     if request.method != "PUT":
-        abort(405)
+        return Response(status=405)
     try:
         username = request.get_json(force=True)['username']
         password = request.get_json(force=True)['password']
 
-        with sqlite3.connect("database.db") as connection:
-            cursor = connection.cursor()
-            cursor.execute("INSERT INTO users (username,password) VALUES(?,?)", (username,password))
-            connection.commit()
-            abort(201)
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        cursor.execute("INSERT INTO users (username,password) VALUES(?,?)", (username, password))
+        connection.commit()
+        connection.close()
+        return Response(status=201)
     except:
         connection.rollback()
-        abort(400)
+        connection.close()
+        return Response(status=400)
+
 
 
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
@@ -76,4 +79,4 @@ def read_from_db():
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
