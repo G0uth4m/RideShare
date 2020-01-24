@@ -3,9 +3,6 @@ import pymongo
 import requests
 import re
 
-client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
-db = client["rideshare"]
-
 app = Flask(__name__)
 
 
