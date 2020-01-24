@@ -1,5 +1,10 @@
 from flask import Flask, request, Response
-import sqlite3
+import pymongo
+import requests
+import re
+
+client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
+db = client["rideshare"]
 
 app = Flask(__name__)
 
@@ -8,37 +13,27 @@ app = Flask(__name__)
 def add_user():
     if request.method != "PUT":
         return Response(status=405)
-    try:
-        username = request.get_json(force=True)['username']
-        password = request.get_json(force=True)['password']
 
-        connection = sqlite3.connect("database.db")
-        cursor = connection.cursor()
-        cursor.execute("INSERT INTO users (username,password) VALUES(?,?)", (username, password))
-        connection.commit()
-        connection.close()
-        return Response(status=201)
-    except:
-        connection.rollback()
-        connection.close()
+    username = request.get_json(force=True)["username"]
+    password = request.get_json(force=True)["password"]
+
+    if re.match(re.compile(r'\b[0-9a-f]{40}\b'), password) is None:
         return Response(status=400)
+
+    post_data = {"insert": [username, password], "columns": ["_id", "password"], "table": "users"}
+    response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+    if response.status_code == 400:
+        return Response(status=400)
+
+    return Response(status=201)
 
 
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
 def remove_user(username):
     if request.method != "DELETE":
         return Response(status=405)
-    try:
-        connection = sqlite3.connect("database.db")
-        cursor = connection.cursor()
-        cursor.execute("DELETE FROM users WHERE username=?", (username,))
-        connection.commit()
-        connection.close()
-        return Response(status=200)
-    except:
-        connection.rollback()
-        connection.close()
-        return Response(status=400)
+
+    # TODO : Remove user from database
 
 
 @app.route('/api/v1/rides', methods=["POST"])
@@ -73,10 +68,20 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
 @app.route('/api/v1/db/write', methods=["POST"])
 def write_to_db():
     insert = request.get_json(force=True)['insert']
-    column = request.get_json(force=True)['column']
-    table = request.get_json(force=True)['table']
+    columns = request.get_json(force=True)['columns']
+    collection = request.get_json(force=True)['table']
 
-    # TODO : INSERT operations to database
+    try:
+        document = {}
+        for i in range(len(columns)):
+            document[columns[i]] = insert[i]
+
+        collection = db[collection]
+        collection.insert_one(document)
+        return Response(status=201)
+
+    except:
+        return Response(status=400)
 
 
 @app.route('/api/v1/db/read', methods=["POST"])
@@ -89,4 +94,6 @@ def read_from_db():
 
 
 if __name__ == "__main__":
+    client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
+    db = client["rideshare"]
     app.run(debug=True)
