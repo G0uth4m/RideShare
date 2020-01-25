@@ -1,4 +1,4 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 import pymongo
 import requests
 import re
@@ -29,6 +29,17 @@ def add_user():
 def remove_user(username):
     if request.method != "DELETE":
         return Response(status=405)
+
+    post_data = {'table': 'users', 'columns': ['_id'], 'where': []}
+    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    if response.status_code == 400:
+        return Response(status=400)
+
+    else:
+        if response.text:
+            user_present = True
+        else:
+            user_present = False
 
     # TODO : Remove user from database
 
@@ -85,9 +96,22 @@ def write_to_db():
 def read_from_db():
     table = request.get_json(force=True)['table']
     columns = request.get_json(force=True)['columns']
-    where = request.get_json(force=True)['where']
+    where = request.get_json(force=True)['where'].split("=")
 
-    # TODO : Read from table
+    filter = {}
+    for i in columns:
+        filter[i] = 1
+
+    try:
+        collection = db[table]
+        if where:
+            result = collection.find_one({where[0]: where[1]}, filter)
+        else:
+            result = collection.find_one({}, filter)
+
+        return jsonify(result)
+    except:
+        return Response(status=400)
 
 
 if __name__ == "__main__":
