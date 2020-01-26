@@ -30,16 +30,16 @@ def remove_user(username):
     if request.method != "DELETE":
         return Response(status=405)
 
-    post_data = {'table': 'users', 'columns': ['_id'], 'where': []}
+    post_data = {'table': 'users', 'columns': ['_id'], 'where': '_id='+username}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
     if response.status_code == 400:
         return Response(status=400)
 
     else:
-        if response.text:
-            user_present = True
-        else:
+        if response.text == 'null\n':
             user_present = False
+        else:
+            user_present = True
 
     # TODO : Remove user from database
 
@@ -96,7 +96,7 @@ def write_to_db():
 def read_from_db():
     table = request.get_json(force=True)['table']
     columns = request.get_json(force=True)['columns']
-    where = request.get_json(force=True)['where'].split("=")
+    where = request.get_json(force=True)['where']
 
     filter = {}
     for i in columns:
@@ -104,7 +104,8 @@ def read_from_db():
 
     try:
         collection = db[table]
-        if where:
+        if where != '':
+            where = where.split("=")
             result = collection.find_one({where[0]: where[1]}, filter)
         else:
             result = collection.find_one({}, filter)
