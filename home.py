@@ -38,6 +38,7 @@ def remove_user(username):
     else:
         if response.text == 'null\n':
             user_present = False
+            return Response(status=400)
         else:
             user_present = True
 
