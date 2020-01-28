@@ -40,7 +40,12 @@ def remove_user(username):
             user_present = False
             return Response(status=400)
         else:
-            user_present = True
+            post_data = {'column': '_id', 'delete': username, 'table': 'users'}
+            response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+            if response.status_code == 400:
+                return Response(status=400)
+            else:
+                return Response(status=200)
 
     # TODO : Remove user from database
 
@@ -67,7 +72,7 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         pass
         # TODO : Get details of given rideId
     elif request.method == "POST":
-        pass
+        username = request.get_json(force=True)["username"]
         # TODO : Join an existing ride
     elif request.method == "DELETE":
         pass
@@ -76,9 +81,27 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
 
 @app.route('/api/v1/db/write', methods=["POST"])
 def write_to_db():
-    insert = request.get_json(force=True)['insert']
-    columns = request.get_json(force=True)['columns']
-    collection = request.get_json(force=True)['table']
+    request_data = request.get_json(force=True)
+
+    if 'delete' in request_data and len(request_data) == 3:
+        delete = request_data['delete']
+        column = request_data['column']
+        collection = request_data['table']
+
+        try:
+            query = {column: delete}
+            collection = db[collection]
+            collection.delete_one(query)
+            return Response(status=200)
+        except:
+            return Response(status=400)
+
+    elif 'delete' not in request_data and len(request_data) != 3:
+        return Response(status=400)
+
+    insert = request_data['insert']
+    columns = request_data['columns']
+    collection = request_data['table']
 
     try:
         document = {}
