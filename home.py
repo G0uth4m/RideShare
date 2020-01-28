@@ -11,20 +11,23 @@ def add_user():
     if request.method != "PUT":
         return Response(status=405)
 
-    request_data  = request.get_json(force=True)
+    request_data = request.get_json(force=True)
 
     try:
         username = request_data["username"]
         password = request_data["password"]
-    except:
+    except KeyError:
+        print("Inappropriate request received")
         return Response(status=400)
 
     if re.match(re.compile(r'\b[0-9a-f]{40}\b'), password) is None:
+        print("Not a SHA-1 password")
         return Response(status=400)
 
     post_data = {"insert": [username, password], "columns": ["_id", "password"], "table": "users"}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
     if response.status_code == 400:
+        print("Error while inserting user to database")
         return Response(status=400)
 
     return Response(status=201)
@@ -38,11 +41,13 @@ def remove_user(username):
     post_data = {'table': 'users', 'columns': ['_id'], 'where': '_id='+username}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
     if response.status_code == 400:
+        print("Error while reading database")
         return Response(status=400)
 
     else:
         if response.text == 'null\n':
             # user_present = False
+            print("User not present in database")
             return Response(status=400)
         else:
             # user_present = True
@@ -52,26 +57,41 @@ def remove_user(username):
 
 @app.route('/api/v1/rides', methods=["POST"])
 def create_ride():
+    if request.method != "POST":
+        return Response(status=405)
+
     request_data = request.get_json(force=True)
     try:
         created_by = request_data['created_by']
         time_stamp = request_data['timestamp']
         source = request_data['source']
         destination = request_data['destination']
-    except:
+    except KeyError:
+        print("Inappropriate request received")
         return Response(status=400)
+
     # TODO : Create ride and add to database
 
 
 @app.route('/api/v1/rides', methods=["GET"])
 def list_rides_between_src_and_dst():
+    if request.method != "GET":
+        return Response(status=405)
+
     source = request.args.get("source")
     destination = request.args.get("destination")
-    # TODO : send all rides between given source and destination as response
+    if source is None or destination is None:
+        print("Inappropriate get parameters received")
+        return Response(status=400)
+
+    # TODO : Send all rides between given source and destination as response
 
 
 @app.route('/api/v1/rides/<rideId>', methods=["GET", "POST", "DELETE"])
 def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
+    if request.method not in ["GET", "POST", "DELETE"]:
+        return Response(status=405)
+
     if request.method == "GET":
         pass
         # TODO : Get details of given rideId
@@ -92,7 +112,8 @@ def write_to_db():
             delete = request_data['delete']
             column = request_data['column']
             collection = request_data['table']
-        except:
+        except KeyError:
+            print("Inappropriate request received")
             return Response(status=400)
 
         try:
@@ -107,7 +128,8 @@ def write_to_db():
         insert = request_data['insert']
         columns = request_data['columns']
         collection = request_data['table']
-    except:
+    except KeyError:
+        print("Inappropriate request received")
         return Response(status=400)
 
     try:
@@ -130,7 +152,8 @@ def read_from_db():
         table = request_data['table']
         columns = request_data['columns']
         where = request_data['where']
-    except:
+    except KeyError:
+        print("Inappropriate request received")
         return Response(status=400)
 
     filter = {}
