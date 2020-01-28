@@ -11,8 +11,13 @@ def add_user():
     if request.method != "PUT":
         return Response(status=405)
 
-    username = request.get_json(force=True)["username"]
-    password = request.get_json(force=True)["password"]
+    request_data  = request.get_json(force=True)
+
+    try:
+        username = request_data["username"]
+        password = request_data["password"]
+    except:
+        return Response(status=400)
 
     if re.match(re.compile(r'\b[0-9a-f]{40}\b'), password) is None:
         return Response(status=400)
@@ -37,25 +42,24 @@ def remove_user(username):
 
     else:
         if response.text == 'null\n':
-            user_present = False
+            # user_present = False
             return Response(status=400)
         else:
+            # user_present = True
             post_data = {'column': '_id', 'delete': username, 'table': 'users'}
             response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
-            if response.status_code == 400:
-                return Response(status=400)
-            else:
-                return Response(status=200)
-
-    # TODO : Remove user from database
-
+            return Response(status=response.status_code)
 
 @app.route('/api/v1/rides', methods=["POST"])
 def create_ride():
-    created_by = request.get_json(force=True)['created_by']
-    time_stamp = request.get_json(force=True)['timestamp']
-    source = request.get_json(force=True)['source']
-    destination = request.get_json(force=True)['destination']
+    request_data = request.get_json(force=True)
+    try:
+        created_by = request_data['created_by']
+        time_stamp = request_data['timestamp']
+        source = request_data['source']
+        destination = request_data['destination']
+    except:
+        return Response(status=400)
     # TODO : Create ride and add to database
 
 
@@ -83,10 +87,13 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
 def write_to_db():
     request_data = request.get_json(force=True)
 
-    if 'delete' in request_data and len(request_data) == 3:
-        delete = request_data['delete']
-        column = request_data['column']
-        collection = request_data['table']
+    if 'delete' in request_data:
+        try:
+            delete = request_data['delete']
+            column = request_data['column']
+            collection = request_data['table']
+        except:
+            return Response(status=400)
 
         try:
             query = {column: delete}
@@ -96,12 +103,12 @@ def write_to_db():
         except:
             return Response(status=400)
 
-    elif 'delete' not in request_data and len(request_data) != 3:
+    try:
+        insert = request_data['insert']
+        columns = request_data['columns']
+        collection = request_data['table']
+    except:
         return Response(status=400)
-
-    insert = request_data['insert']
-    columns = request_data['columns']
-    collection = request_data['table']
 
     try:
         document = {}
@@ -118,9 +125,13 @@ def write_to_db():
 
 @app.route('/api/v1/db/read', methods=["POST"])
 def read_from_db():
-    table = request.get_json(force=True)['table']
-    columns = request.get_json(force=True)['columns']
-    where = request.get_json(force=True)['where']
+    request_data = request.get_json(force=True)
+    try:
+        table = request_data['table']
+        columns = request_data['columns']
+        where = request_data['where']
+    except:
+        return Response(status=400)
 
     filter = {}
     for i in columns:
