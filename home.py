@@ -8,8 +8,8 @@ app = Flask(__name__)
 
 @app.route('/api/v1/users', methods=["PUT"])
 def add_user():
-    if request.method != "PUT":
-        return Response(status=405)
+    # if request.method != "PUT":
+    #     return Response(status=405)
 
     request_data = request.get_json(force=True)
 
@@ -26,6 +26,7 @@ def add_user():
 
     post_data = {"insert": [username, password], "columns": ["_id", "password"], "table": "users"}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+
     if response.status_code == 400:
         print("Error while inserting user to database")
         return Response(status=400)
@@ -35,11 +36,12 @@ def add_user():
 
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
 def remove_user(username):
-    if request.method != "DELETE":
-        return Response(status=405)
+    # if request.method != "DELETE":
+    #     return Response(status=405)
 
     post_data = {'table': 'users', 'columns': ['_id'], 'where': '_id='+username}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+
     if response.status_code == 400:
         print("Error while reading database")
         return Response(status=400)
@@ -57,8 +59,8 @@ def remove_user(username):
 
 @app.route('/api/v1/rides', methods=["POST"])
 def create_ride():
-    if request.method != "POST":
-        return Response(status=405)
+    # if request.method != "POST":
+    #     return Response(status=405)
 
     request_data = request.get_json(force=True)
     try:
@@ -75,8 +77,8 @@ def create_ride():
 
 @app.route('/api/v1/rides', methods=["GET"])
 def list_rides_between_src_and_dst():
-    if request.method != "GET":
-        return Response(status=405)
+    # if request.method != "GET":
+    #     return Response(status=405)
 
     source = request.args.get("source")
     destination = request.args.get("destination")
@@ -89,8 +91,8 @@ def list_rides_between_src_and_dst():
 
 @app.route('/api/v1/rides/<rideId>', methods=["GET", "POST", "DELETE"])
 def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
-    if request.method not in ["GET", "POST", "DELETE"]:
-        return Response(status=405)
+    # if request.method not in ["GET", "POST", "DELETE"]:
+    #     return Response(status=405)
 
     if request.method == "GET":
         pass
