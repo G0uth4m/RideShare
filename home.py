@@ -63,7 +63,7 @@ def create_ride():
         ride_count = int(f.read())
         f.close()
 
-        post_data = {"insert": [ride_count+1, created_by, time_stamp, source, destination, [created_by]], "columns": ["rideId", "created_by", "timestamp", "source", "destination", "users"], "table": "rides"}
+        post_data = {"insert": [ride_count+1, ride_count+1, created_by, time_stamp, source, destination, [created_by]], "columns": ["_id", "rideId", "created_by", "timestamp", "source", "destination", "users"], "table": "rides"}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
 
         if response.status_code == 400:
@@ -90,17 +90,27 @@ def list_rides_between_src_and_dst():
         print("Inappropriate get parameters received")
         return Response(status=400)
 
-    # TODO : Send all rides between given source and destination as response
+    # TODO : List all upcoming rides for a given source and destination
 
 
 @app.route('/api/v1/rides/<rideId>', methods=["GET", "POST", "DELETE"])
 def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
     # if request.method not in ["GET", "POST", "DELETE"]:
-    #     return Response(status=405)
+    #     return Response(status=405)\
+    try:
+        a = int(rideId)
+    except:
+        return Response(status=405)
 
     if request.method == "GET":
-        pass
-        # TODO : Get details of given rideId
+        post_data = {"table": "rides", "columns": ["rideId", "created_by", "users", "timestamp", "source", "destination"], "where": "rideId="+rideId}
+        response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+        res = response.json()
+        if res is None:
+            return Response(status=204)
+        del res["_id"]
+        return jsonify(res)
+
     elif request.method == "POST":
         username = request.get_json(force=True)["username"]
         # TODO : Join an existing ride
@@ -170,6 +180,10 @@ def read_from_db():
         collection = db[table]
         if where != '':
             where = where.split("=")
+            try:
+                where[1] = int(where[1])
+            except:
+                pass
             result = collection.find_one({where[0]: where[1]}, filter)
         else:
             result = collection.find_one({}, filter)
