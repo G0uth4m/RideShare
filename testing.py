@@ -12,11 +12,13 @@ def test():
     # # print(delete, type(delete))
     #
     # return Response(status=200)
+    #
+    # source = request.args.get("source")
+    # destination = request.args.get("destination")
+    #
+    # print(source, destination)
 
-    source = request.args.get("source")
-    destination = request.args.get("destination")
 
-    print(source, destination)
 
     return Response(status=200)
 

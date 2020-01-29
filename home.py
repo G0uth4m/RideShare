@@ -8,9 +8,6 @@ app = Flask(__name__)
 
 @app.route('/api/v1/users', methods=["PUT"])
 def add_user():
-    # if request.method != "PUT":
-    #     return Response(status=405)
-
     request_data = request.get_json(force=True)
 
     try:
@@ -36,32 +33,17 @@ def add_user():
 
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
 def remove_user(username):
-    # if request.method != "DELETE":
-    #     return Response(status=405)
-
-    post_data = {'table': 'users', 'columns': ['_id'], 'where': '_id='+username}
-    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
-
-    if response.status_code == 400:
-        print("Error while reading database")
+    if not isUserPresent(username):
+        print("User not present")
         return Response(status=400)
 
-    else:
-        if response.text == 'null\n':
-            # user_present = False
-            print("User not present in database")
-            return Response(status=400)
-        else:
-            # user_present = True
-            post_data = {'column': '_id', 'delete': username, 'table': 'users'}
-            response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
-            return Response(status=response.status_code)
+    post_data = {'column': '_id', 'delete': username, 'table': 'users'}
+    response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+    return Response(status=response.status_code)
+
 
 @app.route('/api/v1/rides', methods=["POST"])
 def create_ride():
-    # if request.method != "POST":
-    #     return Response(status=405)
-
     request_data = request.get_json(force=True)
     try:
         created_by = request_data['created_by']
@@ -72,7 +54,29 @@ def create_ride():
         print("Inappropriate request received")
         return Response(status=400)
 
-    # TODO : Create ride and add to database
+    if not isUserPresent(created_by):
+        print("User not present")
+        return Response(status=400)
+
+    try:
+        f = open('seq.txt', 'r')
+        ride_count = int(f.read())
+        f.close()
+
+        post_data = {"insert": [ride_count+1, created_by, time_stamp, source, destination, [created_by]], "columns": ["rideId", "created_by", "timestamp", "source", "destination", "users"], "table": "rides"}
+        response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+
+        if response.status_code == 400:
+            print("Error while writing to database")
+            return Response(status=400)
+        else:
+            f = open('seq.txt', 'w')
+            f.write(str(ride_count+1))
+            f.close()
+            return Response(status=201)
+    except:
+        print("Error while writing to database")
+        return Response(status=400)
 
 
 @app.route('/api/v1/rides', methods=["GET"])
@@ -175,7 +179,16 @@ def read_from_db():
         return Response(status=400)
 
 
+def isUserPresent(username):
+    post_data = {'table': 'users', 'columns': ['_id'], 'where': '_id='+username}
+    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    return response.status_code != 400 and response.text != 'null\n'
+
+
 if __name__ == "__main__":
     client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
     db = client["rideshare"]
+    # counters = db["counters"]
+    # res = counters.find_one({}, {"seq":1})
+    # ride_count = int(res["seq"])
     app.run(debug=True)
