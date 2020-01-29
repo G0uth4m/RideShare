@@ -63,7 +63,9 @@ def create_ride():
         ride_count = int(f.read())
         f.close()
 
-        post_data = {"insert": [ride_count+1, ride_count+1, created_by, time_stamp, source, destination, [created_by]], "columns": ["_id", "rideId", "created_by", "timestamp", "source", "destination", "users"], "table": "rides"}
+        post_data = {
+            "insert": [ride_count + 1, ride_count + 1, created_by, time_stamp, source, destination, [created_by]],
+            "columns": ["_id", "rideId", "created_by", "timestamp", "source", "destination", "users"], "table": "rides"}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
 
         if response.status_code == 400:
@@ -71,7 +73,7 @@ def create_ride():
             return Response(status=400)
         else:
             f = open('seq.txt', 'w')
-            f.write(str(ride_count+1))
+            f.write(str(ride_count + 1))
             f.close()
             return Response(status=201)
     except:
@@ -103,7 +105,9 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         return Response(status=405)
 
     if request.method == "GET":
-        post_data = {"table": "rides", "columns": ["rideId", "created_by", "users", "timestamp", "source", "destination"], "where": "rideId="+rideId}
+        post_data = {"table": "rides",
+                     "columns": ["rideId", "created_by", "users", "timestamp", "source", "destination"],
+                     "where": "rideId=" + rideId}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
         res = response.json()
         if res is None:
@@ -112,8 +116,15 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         return jsonify(res)
 
     elif request.method == "POST":
-        username = request.get_json(force=True)["username"]
-        # TODO : Join an existing ride
+        username = request.get_json(force=True)["username"].strip('{}')
+        if not isUserPresent(username):
+            print("User not present")
+            return Response(status=400)
+        post_data = {"table": "rides", "where": "rideId=" + rideId, "update": "users", "data": username,
+                     "operation": "push"}
+        response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+        return Response(status=response.status_code)
+
     elif request.method == "DELETE":
         pass
         # TODO : Delete a given rideId
@@ -137,6 +148,34 @@ def write_to_db():
             collection = db[collection]
             collection.delete_one(query)
             return Response(status=200)
+        except:
+            return Response(status=400)
+
+    if 'update' in request_data:
+        try:
+            collection = request_data['table']
+            where = request_data['where']
+            array = request_data['update']
+            data = request_data['data']
+            operation = request_data['operation']
+        except KeyError:
+            print("Inappropriate request received")
+            return Response(status=400)
+
+        try:
+            collection = db[collection]
+            if "=" in where:
+                where = where.split("=")
+                try:
+                    where[1] = int(where[1])
+                except:
+                    pass
+                print(where, operation, array, data)
+                collection.update_one({where[0]: where[1]}, {"$" + operation: {array: data}})
+                return Response(status=200)
+            else:
+                collection.update_one({}, {"$" + operation: {array: data}})
+                return Response(status=200)
         except:
             return Response(status=400)
 
@@ -194,7 +233,7 @@ def read_from_db():
 
 
 def isUserPresent(username):
-    post_data = {'table': 'users', 'columns': ['_id'], 'where': '_id='+username}
+    post_data = {'table': 'users', 'columns': ['_id'], 'where': '_id=' + username}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
     return response.status_code != 400 and response.text != 'null\n'
 
