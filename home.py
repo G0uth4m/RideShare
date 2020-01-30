@@ -29,7 +29,7 @@ def add_user():
         print("Error while inserting user to database")
         return Response(status=400)
 
-    return Response(status=201)
+    return Response(status=201, response='{}', mimetype='application/json')
 
 
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
@@ -40,7 +40,7 @@ def remove_user(username):
 
     post_data = {'column': '_id', 'delete': username, 'table': 'users'}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
-    return Response(status=response.status_code)
+    return Response(status=response.status_code, response='{}', mimetype='aplication/json')
 
 
 @app.route('/api/v1/rides', methods=["POST"])
@@ -79,7 +79,7 @@ def create_ride():
             f = open('seq.txt', 'w')
             f.write(str(ride_count + 1))
             f.close()
-            return Response(status=201)
+            return Response(status=201, response='{}', mimetype='application/json')
     except:
         print("Error while writing to database")
         return Response(status=400)
@@ -135,7 +135,7 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         post_data = {"table": "rides", "where": "rideId=" + rideId, "update": "users", "data": username,
                      "operation": "push"}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
-        return Response(status=response.status_code)
+        return Response(status=response.status_code, response='{}', mimetype='application/json')
 
     elif request.method == "DELETE":
         if not isRidePresent(rideId):
@@ -143,7 +143,7 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
 
         post_data = {'column': 'rideId', 'delete': int(rideId), 'table': 'rides'}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
-        return Response(status=response.status_code)
+        return Response(status=response.status_code, response='{}', mimetype='application/json')
 
 
 @app.route('/api/v1/db/write', methods=["POST"])
