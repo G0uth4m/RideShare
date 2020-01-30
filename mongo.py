@@ -9,12 +9,21 @@ rides = db["rides"]
 
 for i in users.find():
     print(i)
-
+#
 print()
 
 
 
 for j in rides.find():
     print(j)
+
+print()
+
+res = []
+for k in rides.find({"source": "Sanjaynagar", "destination": "Jaynagar"}, {"rideId": 1, "created_by": 1, "timestamp": 1}):
+    del k["_id"]
+    res.append(k)
+
+print(res)
 
 # x = users.delete_many({})

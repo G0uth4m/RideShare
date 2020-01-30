@@ -2,6 +2,7 @@ from flask import Flask, request, Response, jsonify
 import pymongo
 import requests
 import re
+from pandas import read_csv
 
 app = Flask(__name__)
 
@@ -54,6 +55,9 @@ def create_ride():
         print("Inappropriate request received")
         return Response(status=400)
 
+    if source not in areas or destination not in areas:
+        return Response(status=400)
+
     if not isUserPresent(created_by):
         print("User not present")
         return Response(status=400)
@@ -92,7 +96,15 @@ def list_rides_between_src_and_dst():
         print("Inappropriate get parameters received")
         return Response(status=400)
 
-    # TODO : List all upcoming rides for a given source and destination
+    if source not in areas and destination not in areas:
+        print("Areas not found")
+        return Response(status=400)
+
+    post_data = {"many": 1, "table": "rides", "columns": ["rideId", "created_by", "timestamp"], "where": {"source": source, "destination": destination}}
+    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    if response.status_code == 400:
+        return Response(status=400)
+    return jsonify(response.json())
 
 
 @app.route('/api/v1/rides/<rideId>', methods=["GET", "POST", "DELETE"])
@@ -116,7 +128,7 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         return jsonify(res)
 
     elif request.method == "POST":
-        username = request.get_json(force=True)["username"].strip('{}')
+        username = request.get_json(force=True)["username"]
         if not isUserPresent(username):
             print("User not present")
             return Response(status=400)
@@ -211,9 +223,22 @@ def read_from_db():
         print("Inappropriate request received")
         return Response(status=400)
 
+
+
     filter = {}
     for i in columns:
         filter[i] = 1
+
+    if 'many' in request_data:
+        try:
+            collection = db[table]
+            res = []
+            for i in collection.find(where, filter):
+                res.append(i)
+
+            return jsonify(res)
+        except:
+            return Response(status=400)
 
     try:
         collection = db[table]
@@ -223,6 +248,7 @@ def read_from_db():
                 where[1] = int(where[1])
             except:
                 pass
+
             result = collection.find_one({where[0]: where[1]}, filter)
         else:
             result = collection.find_one({}, filter)
@@ -244,4 +270,5 @@ if __name__ == "__main__":
     # counters = db["counters"]
     # res = counters.find_one({}, {"seq":1})
     # ride_count = int(res["seq"])
+    areas = read_csv("AreaNameEnum.csv").iloc[:, 1:2].values
     app.run(debug=True)
