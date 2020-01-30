@@ -138,8 +138,12 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         return Response(status=response.status_code)
 
     elif request.method == "DELETE":
-        pass
-        # TODO : Delete a given rideId
+        if not isRidePresent(rideId):
+            return Response(status=400)
+
+        post_data = {'column': 'rideId', 'delete': int(rideId), 'table': 'rides'}
+        response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+        return Response(status=response.status_code)
 
 
 @app.route('/api/v1/db/write', methods=["POST"])
@@ -263,12 +267,14 @@ def isUserPresent(username):
     response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
     return response.status_code != 400 and response.text != 'null\n'
 
+def isRidePresent(rideId):
+    post_data = {'table': 'rides', 'columns': ['rideId'], 'where': 'rideId=' + rideId}
+    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    return response.status_code != 400 and response.text != 'null\n'
+
 
 if __name__ == "__main__":
     client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
     db = client["rideshare"]
-    # counters = db["counters"]
-    # res = counters.find_one({}, {"seq":1})
-    # ride_count = int(res["seq"])
     areas = read_csv("AreaNameEnum.csv").iloc[:, 1:2].values
     app.run(debug=True)
