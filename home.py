@@ -65,15 +65,10 @@ def create_ride():
         hours = int(time_stamp[17:19])
         req_date = datetime(year, month, day, hours, minutes, seconds)
     except:
-        print("Timestamp invalid")
+        print("Invalid timestamp")
         return Response(status=400)
-
 
     if source not in areas or destination not in areas:
-        return Response(status=400)
-
-    if re.match(re.compile(r''), time_stamp) is None:
-        print("Invalid timestamp")
         return Response(status=400)
 
     if not isUserPresent(created_by):
@@ -118,7 +113,8 @@ def list_rides_between_src_and_dst():
         print("Areas not found")
         return Response(status=400)
 
-    post_data = {"many": 1, "table": "rides", "columns": ["rideId", "created_by", "timestamp"], "where": {"source": source, "destination": destination}}
+    post_data = {"many": 1, "table": "rides", "columns": ["rideId", "created_by", "timestamp"],
+                 "where": {"source": source, "destination": destination}}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
     if response.status_code == 400:
         return Response(status=400)
@@ -245,8 +241,6 @@ def read_from_db():
         print("Inappropriate request received")
         return Response(status=400)
 
-
-
     filter = {}
     for i in columns:
         filter[i] = 1
@@ -284,6 +278,7 @@ def isUserPresent(username):
     post_data = {'table': 'users', 'columns': ['_id'], 'where': '_id=' + username}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
     return response.status_code != 400 and response.text != 'null\n'
+
 
 def isRidePresent(rideId):
     post_data = {'table': 'rides', 'columns': ['rideId'], 'where': 'rideId=' + rideId}
