@@ -3,6 +3,7 @@ import pymongo
 import requests
 import re
 from pandas import read_csv
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -55,7 +56,24 @@ def create_ride():
         print("Inappropriate request received")
         return Response(status=400)
 
+    try:
+        day = int(time_stamp[0:2])
+        month = int(time_stamp[3:5])
+        year = int(time_stamp[6:10])
+        seconds = int(time_stamp[11:13])
+        minutes = int(time_stamp[14:16])
+        hours = int(time_stamp[17:19])
+        req_date = datetime(year, month, day, hours, minutes, seconds)
+    except:
+        print("Timestamp invalid")
+        return Response(status=400)
+
+
     if source not in areas or destination not in areas:
+        return Response(status=400)
+
+    if re.match(re.compile(r''), time_stamp) is None:
+        print("Invalid timestamp")
         return Response(status=400)
 
     if not isUserPresent(created_by):
