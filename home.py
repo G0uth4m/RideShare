@@ -150,10 +150,9 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
                      "columns": ["rideId", "created_by", "users", "timestamp", "source", "destination"],
                      "where": {"rideId": int(rideId)}}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+        if response.text == "":
+            return Response(status=204, response='{}', mimetype='application/json')
         res = response.json()
-        print(res)
-        if res is None:
-            return Response(status=204)
         del res["_id"]
         return jsonify(res)
 
@@ -162,6 +161,10 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         if not isUserPresent(username):
             print("User not present")
             return Response(status=400)
+
+        if not isRidePresent(rideId):
+            return Response(status=400)
+
         post_data = {"table": "rides", "where": {"rideId": int(rideId)}, "update": "users", "data": username,
                      "operation": "push"}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
