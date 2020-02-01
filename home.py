@@ -42,12 +42,10 @@ def remove_user(username):
         print("User not present")
         return Response(status=400)
 
-    # TODO : Check if user has created any ride. If yes, don't delete
     if check_rides_created_by_user(username):
         print("User has a ride created. User can't be deleted")
         return Response(status=400)
 
-    # TODO : Check if user is in any ride. If yes, don't delete
     if check_rides_joined_by_user(username):
         print("User has already joined a ride. User can't be deleted")
         return Response(status=400)
