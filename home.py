@@ -2,7 +2,6 @@ from flask import Flask, request, Response, jsonify
 import pymongo
 import requests
 import re
-from pandas import read_csv
 from datetime import datetime
 
 app = Flask(__name__)
@@ -44,8 +43,14 @@ def remove_user(username):
         return Response(status=400)
 
     # TODO : Check if user has created any ride. If yes, don't delete
+    if check_rides_created_by_user(username):
+        print("User has a ride created. User can't be deleted")
+        return Response(status=400)
 
-    # TODO : Check if user is in any ride. If yes, cascade delete
+    # TODO : Check if user is in any ride. If yes, don't delete
+    if check_rides_joined_by_user(username):
+        print("User has already joined a ride. User can't be deleted")
+        return Response(status=400)
 
     post_data = {'column': '_id', 'delete': username, 'table': 'users'}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
@@ -291,10 +296,6 @@ def isRidePresent(rideId):
     return response.status_code != 400 and response.text != 'null\n'
 
 
-def isUserInRide(username):
-    pass
-
-
 def convert_datetime_to_timestamp(k):
     day = str(k.day) if len(str(k.day)) == 2 else "0" + str(k.day)
     month = str(k.month) if len(str(k.month)) == 2 else "0" + str(k.month)
@@ -313,6 +314,20 @@ def convert_timestamp_to_datetime(time_stamp):
     minutes = int(time_stamp[14:16])
     hours = int(time_stamp[17:19])
     return datetime(year, month, day, hours, minutes, seconds)
+
+
+def check_rides_created_by_user(username):
+    post_data = {"table": "rides", "columns": [], "where": {"created_by": username}}
+    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    print(response.text)
+    return response.status_code != 400 and response.text != 'null\n'
+
+
+def check_rides_joined_by_user(username):
+    post_data = {"table": "rides", "columns": [], "where": {"users": username}}
+    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    print(response.text)
+    return response.status_code != 400 and response.text != 'null\n'
 
 
 if __name__ == "__main__":

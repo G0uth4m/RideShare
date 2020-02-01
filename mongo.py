@@ -27,3 +27,5 @@ for k in rides.find({"source": "Sanjaynagar", "destination": "Jaynagar"}, {"ride
 print(res)
 
 # x = users.delete_many({})
+
+f = open("AreaNameEnum.csv")
