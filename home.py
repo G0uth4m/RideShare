@@ -283,12 +283,6 @@ def isUserPresent(username):
     return response.status_code != 400 and response.text != 'null\n'
 
 
-def isRidePresent(rideId):
-    post_data = {'table': 'rides', 'columns': ['rideId'], 'where': {'rideId': int(rideId)}}
-    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
-    return response.status_code != 400 and response.text != 'null\n'
-
-
 def convert_datetime_to_timestamp(k):
     day = str(k.day) if len(str(k.day)) == 2 else "0" + str(k.day)
     month = str(k.month) if len(str(k.month)) == 2 else "0" + str(k.month)
