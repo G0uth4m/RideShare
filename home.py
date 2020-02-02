@@ -34,21 +34,15 @@ def add_user():
 
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
 def remove_user(username):
-    if not isUserPresent(username):
-        print("User not present")
-        return Response(status=400)
-
-    if check_rides_created_by_user(username):
-        print("User has a ride created. User can't be deleted")
-        return Response(status=400)
-
-    if check_rides_joined_by_user(username):
-        print("User has already joined a ride. User can't be deleted")
+    if check_rides_joined_or_created_by_user(username):
+        print("User has a ride created or joined. User can't be deleted")
         return Response(status=400)
 
     post_data = {'column': '_id', 'delete': username, 'table': 'users'}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
-    return Response(status=response.status_code, response='{}', mimetype='application/json')
+    if response.status_code == 400:
+        return Response(status=400)
+    return jsonify({})
 
 
 @app.route('/api/v1/rides', methods=["POST"])
@@ -167,13 +161,11 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         return Response(status=response.status_code, response='{}', mimetype='application/json')
 
     elif request.method == "DELETE":
-        if not isRidePresent(rideId):
-            print("Ride not present")
-            return Response(status=400)
-
         post_data = {'column': 'rideId', 'delete': int(rideId), 'table': 'rides'}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
-        return Response(status=response.status_code, response='{}', mimetype='application/json')
+        if response.status_code == 400:
+            return Response(status=400)
+        return jsonify({})
 
 
 @app.route('/api/v1/db/write', methods=["POST"])
@@ -192,8 +184,10 @@ def write_to_db():
         try:
             query = {column: delete}
             collection = db[collection]
-            collection.delete_one(query)
-            return Response(status=200)
+            x = collection.delete_one(query)
+            if x.raw_result['n'] == 1:
+                return Response(status=200)
+            return Response(status=400)
         except:
             print("Mongo query failed")
             return Response(status=400)
@@ -313,17 +307,9 @@ def convert_timestamp_to_datetime(time_stamp):
     return datetime(year, month, day, hours, minutes, seconds)
 
 
-def check_rides_created_by_user(username):
-    post_data = {"table": "rides", "columns": [], "where": {"created_by": username}}
+def check_rides_joined_or_created_by_user(username):
+    post_data = {"table": "rides", "columns": [], "where": {"$or": [{"users": username}, {"created_by": username}]}}
     response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
-    print(response.text)
-    return response.status_code != 400 and response.text != 'null\n'
-
-
-def check_rides_joined_by_user(username):
-    post_data = {"table": "rides", "columns": [], "where": {"users": username}}
-    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
-    print(response.text)
     return response.status_code != 400 and response.text != 'null\n'
 
 
