@@ -166,7 +166,7 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
             return Response(status=400)
 
         post_data = {"table": "rides", "where": {"rideId": int(rideId)}, "update": "users", "data": username,
-                     "operation": "push"}
+                     "operation": "addToSet"}
         response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
         return Response(status=response.status_code, response='{}', mimetype='application/json')
 
