@@ -18,10 +18,6 @@ def add_user():
         print("Inappropriate request received")
         return Response(status=400)
 
-    if isUserPresent(username):
-        print("Username already taken")
-        return Response(status=400)
-
     if re.match(re.compile(r'\b[0-9a-f]{40}\b'), password) is None:
         print("Not a SHA-1 password")
         return Response(status=400)
