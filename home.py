@@ -126,6 +126,8 @@ def list_rides_between_src_and_dst():
         if "_id" in result[i]:
             del result[i]["_id"]
 
+    if result == []:
+        return Response(status=204)
     return jsonify(result)
 
 
