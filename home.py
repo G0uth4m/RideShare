@@ -107,6 +107,7 @@ def list_rides_between_src_and_dst():
         source = int(source)
         destination = int(destination)
     except:
+        print("Source and destination parameters must be integers")
         return Response(status=400)
 
     if (source > len(areas) or destination > len(areas)) and (source < 1 or destination < 1):
@@ -150,9 +151,6 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         username = request.get_json(force=True)["username"]
         if not isUserPresent(username):
             print("User not present")
-            return Response(status=400)
-
-        if not isRidePresent(rideId):
             return Response(status=400)
 
         post_data = {"table": "rides", "where": {"rideId": int(rideId)}, "update": "users", "data": username,
@@ -205,8 +203,10 @@ def write_to_db():
 
         try:
             collection = db[collection]
-            collection.update_one(where, {"$" + operation: {array: data}})
-            return Response(status=200)
+            x = collection.update_one(where, {"$" + operation: {array: data}})
+            if x.raw_result['n'] == 1:
+                return Response(status=200)
+            return Response(status=400)
         except:
             return Response(status=400)
 
