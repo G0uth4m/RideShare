@@ -126,7 +126,7 @@ def list_rides_between_src_and_dst():
         if "_id" in result[i]:
             del result[i]["_id"]
 
-    if result == []:
+    if not result:
         return Response(status=204)
     return jsonify(result)
 
@@ -312,7 +312,8 @@ def check_rides_joined_or_created_by_user(username):
 
 
 if __name__ == "__main__":
-    client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
+    # client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
+    client = pymongo.MongoClient("mongodb://localhost:27017/")
     db = client["rideshare"]
     places = open("AreaNameEnum.csv", "r")
     areas = places.read()
