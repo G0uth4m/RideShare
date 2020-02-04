@@ -1,20 +1,10 @@
 from flask import Flask, request, Response, jsonify
-import pymongo
+from config import db, areas, ip_port
 import requests
 import re
 from datetime import datetime
 
 app = Flask(__name__)
-
-client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
-db = client["rideshare"]
-places = open("AreaNameEnum.csv", "r")
-areas = places.read()
-areas = areas.split('\n')
-for i in range(len(areas)):
-    areas[i] = areas[i].split(',')
-areas.pop(0)
-areas.pop(-1)
 
 
 @app.route('/api/v1/users', methods=["PUT"])
@@ -25,18 +15,18 @@ def add_user():
         username = request_data["username"]
         password = request_data["password"]
     except KeyError:
-        print("Inappropriate request received")
+        # print("Inappropriate request received")
         return Response(status=400)
 
     if re.match(re.compile(r'\b[0-9a-f]{40}\b'), password) is None:
-        print("Not a SHA-1 password")
+        # print("Not a SHA-1 password")
         return Response(status=400)
 
     post_data = {"insert": [username, password], "columns": ["_id", "password"], "table": "users"}
-    response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+    response = requests.post('http://' + ip_port + '/api/v1/db/write', json=post_data)
 
     if response.status_code == 400:
-        print("Error while inserting user to database")
+        # print("Error while inserting user to database")
         return Response(status=400)
 
     return Response(status=201, response='{}', mimetype='application/json')
@@ -45,11 +35,11 @@ def add_user():
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
 def remove_user(username):
     if check_rides_joined_or_created_by_user(username):
-        print("User has a ride created or joined. User can't be deleted")
+        # print("User has a ride created or joined. User can't be deleted")
         return Response(status=400)
 
     post_data = {'column': '_id', 'delete': username, 'table': 'users'}
-    response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+    response = requests.post('http://' + ip_port + '/api/v1/db/write', json=post_data)
     if response.status_code == 400:
         return Response(status=400)
     return jsonify({})
@@ -64,17 +54,17 @@ def create_ride():
         source = int(request_data['source'])
         destination = int(request_data['destination'])
     except KeyError:
-        print("Inappropriate request received")
+        # print("Inappropriate request received")
         return Response(status=400)
 
     try:
         req_date = convert_timestamp_to_datetime(time_stamp)
     except:
-        print("Invalid timestamp")
+        # print("Invalid timestamp")
         return Response(status=400)
 
     if (source > len(areas) or destination > len(areas)) and (source < 1 or destination < 1):
-        print("Invalid source or destination")
+        # print("Invalid source or destination")
         return Response(status=400)
 
     if not isUserPresent(created_by):
@@ -89,10 +79,10 @@ def create_ride():
         post_data = {
             "insert": [ride_count + 1, ride_count + 1, created_by, time_stamp, areas[source-1][1], areas[destination-1][1], []],
             "columns": ["_id", "rideId", "created_by", "timestamp", "source", "destination", "users"], "table": "rides"}
-        response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+        response = requests.post('http://' + ip_port + '/api/v1/db/write', json=post_data)
 
         if response.status_code == 400:
-            print("Error while writing to database")
+            # print("Error while writing to database")
             return Response(status=400)
         else:
             f = open('seq.txt', 'w')
@@ -100,7 +90,7 @@ def create_ride():
             f.close()
             return Response(status=201, response='{}', mimetype='application/json')
     except:
-        print("Error while writing to database")
+        # print("Error while writing to database")
         return Response(status=400)
 
 
@@ -110,23 +100,23 @@ def list_rides_between_src_and_dst():
     destination = request.args.get("destination")
 
     if source is None or destination is None:
-        print("Inappropriate get parameters received")
+        # print("Inappropriate get parameters received")
         return Response(status=400)
 
     try:
         source = int(source)
         destination = int(destination)
     except:
-        print("Source and destination parameters must be integers")
+        # print("Source and destination parameters must be integers")
         return Response(status=400)
 
     if (source > len(areas) or destination > len(areas)) and (source < 1 or destination < 1):
-        print("Areas not found")
+        # print("Areas not found")
         return Response(status=400)
 
     post_data = {"many": 1, "table": "rides", "columns": ["rideId", "created_by", "timestamp"],
                  "where": {"source": areas[source-1][1], "destination": areas[destination-1][1], "timestamp": {"$gt": convert_datetime_to_timestamp(datetime.now())}}}
-    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    response = requests.post('http://' + ip_port + '/api/v1/db/read', json=post_data)
 
     if response.status_code == 400:
         return Response(status=400)
@@ -152,7 +142,7 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
         post_data = {"table": "rides",
                      "columns": ["rideId", "created_by", "users", "timestamp", "source", "destination"],
                      "where": {"rideId": int(rideId)}}
-        response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+        response = requests.post('http://' + ip_port + '/api/v1/db/read', json=post_data)
         if response.text == "":
             return Response(status=204, response='{}', mimetype='application/json')
         res = response.json()
@@ -162,19 +152,19 @@ def get_details_of_ride_or_join_ride_or_delete_ride(rideId):
     elif request.method == "POST":
         username = request.get_json(force=True)["username"]
         if not isUserPresent(username):
-            print("User not present")
+            # print("User not present")
             return Response(status=400)
 
         post_data = {"table": "rides", "where": {"rideId": int(rideId)}, "update": "users", "data": username,
                      "operation": "addToSet"}
-        response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+        response = requests.post('http://' + ip_port + '/api/v1/db/write', json=post_data)
         if response.status_code == 400:
             return Response(status=400)
         return jsonify({})
 
     elif request.method == "DELETE":
         post_data = {'column': 'rideId', 'delete': int(rideId), 'table': 'rides'}
-        response = requests.post('http://127.0.0.1:5000/api/v1/db/write', json=post_data)
+        response = requests.post('http://' + ip_port + '/api/v1/db/write', json=post_data)
         if response.status_code == 400:
             return Response(status=400)
         return jsonify({})
@@ -190,7 +180,7 @@ def write_to_db():
             column = request_data['column']
             collection = request_data['table']
         except KeyError:
-            print("Inappropriate request received")
+            # print("Inappropriate request received")
             return Response(status=400)
 
         try:
@@ -201,7 +191,7 @@ def write_to_db():
                 return Response(status=200)
             return Response(status=400)
         except:
-            print("Mongo query failed")
+            # print("Mongo query failed")
             return Response(status=400)
 
     if 'update' in request_data:
@@ -212,7 +202,7 @@ def write_to_db():
             data = request_data['data']
             operation = request_data['operation']
         except KeyError:
-            print("Inappropriate request received")
+            # print("Inappropriate request received")
             return Response(status=400)
 
         try:
@@ -229,7 +219,7 @@ def write_to_db():
         columns = request_data['columns']
         collection = request_data['table']
     except KeyError:
-        print("Inappropriate request received")
+        # print("Inappropriate request received")
         return Response(status=400)
 
     try:
@@ -256,7 +246,7 @@ def read_from_db():
         columns = request_data['columns']
         where = request_data['where']
     except KeyError:
-        print("Inappropriate request received")
+        # print("Inappropriate request received")
         return Response(status=400)
 
     if "timestamp" in where:
@@ -291,7 +281,7 @@ def read_from_db():
 
 def isUserPresent(username):
     post_data = {'table': 'users', 'columns': ['_id'], 'where': {'_id': username}}
-    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    response = requests.post('http://' + ip_port + '/api/v1/db/read', json=post_data)
     return response.status_code != 400 and response.text != 'null\n'
 
 
@@ -317,7 +307,7 @@ def convert_timestamp_to_datetime(time_stamp):
 
 def check_rides_joined_or_created_by_user(username):
     post_data = {"table": "rides", "columns": [], "where": {"$or": [{"users": username}, {"created_by": username}]}}
-    response = requests.post('http://127.0.0.1:5000/api/v1/db/read', json=post_data)
+    response = requests.post('http://' + ip_port + '/api/v1/db/read', json=post_data)
     return response.status_code != 400 and response.text != 'null\n'
 
 
