@@ -6,6 +6,16 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
+db = client["rideshare"]
+places = open("AreaNameEnum.csv", "r")
+areas = places.read()
+areas = areas.split('\n')
+for i in range(len(areas)):
+    areas[i] = areas[i].split(',')
+areas.pop(0)
+areas.pop(-1)
+
 
 @app.route('/api/v1/users', methods=["PUT"])
 def add_user():
@@ -312,14 +322,4 @@ def check_rides_joined_or_created_by_user(username):
 
 
 if __name__ == "__main__":
-    # client = pymongo.MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
-    client = pymongo.MongoClient("mongodb://localhost:27017/")
-    db = client["rideshare"]
-    places = open("AreaNameEnum.csv", "r")
-    areas = places.read()
-    areas = areas.split('\n')
-    for i in range(len(areas)):
-        areas[i] = areas[i].split(',')
-    areas.pop(0)
-    areas.pop(-1)
     app.run(debug=True)
