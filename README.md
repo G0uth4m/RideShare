@@ -20,6 +20,7 @@ $ source venv/bin/activate
 ### Step 3 - Setting Up a Flask Application
 ```shell script
 (venv) $ pip install -r requirements.txt
+(venv) $ deactivate
 ```
 
 ### Step 4 - Configuring MongoDB
@@ -45,7 +46,6 @@ $ sudo serive mongodb restart
 
 ### Step 5 - Configuring Gunicorn
 ```shell script
-(venv) $ deactivate
 $ sudo nano /etc/systemd/system/rideshare.service
 [Unit]
 Description=Gunicorn instance to serve rideshare
