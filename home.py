@@ -297,6 +297,9 @@ def clear_db():
     try:
         collection1.delete_many({})
         collection2.delete_many({})
+        f = open("seq.txt", "w")
+        f.write("0")
+        f.close()
         return Response(status=200)
     except:
         return Response(status=400)
