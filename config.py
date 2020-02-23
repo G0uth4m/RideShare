@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 
-client = MongoClient("mongodb://neutron:myindia@172.28.128.10/rideshare")
+client = MongoClient("mongodb://neutron:lolfool@172.28.128.13/rideshare")
 db = client["rideshare"]
 
 places = open("AreaNameEnum.csv", "r")

@@ -7,29 +7,40 @@ from datetime import datetime
 app = Flask(__name__)
 
 
-@app.route('/api/v1/users', methods=["PUT"])
+@app.route('/api/v1/users', methods=["PUT", "GET"])
 def add_user():
-    request_data = request.get_json(force=True)
+    if request.method == "PUT":
+        request_data = request.get_json(force=True)
 
-    try:
-        username = request_data["username"]
-        password = request_data["password"]
-    except KeyError:
-        # print("Inappropriate request received")
-        return Response(status=400)
+        try:
+            username = request_data["username"]
+            password = request_data["password"]
+        except KeyError:
+            # print("Inappropriate request received")
+            return Response(status=400)
 
-    if re.match(re.compile(r'\b[0-9a-f]{40}\b'), password) is None:
-        # print("Not a SHA-1 password")
-        return Response(status=400)
+        if re.match(re.compile(r'\b[0-9a-f]{40}\b'), password) is None:
+            # print("Not a SHA-1 password")
+            return Response(status=400)
 
-    post_data = {"insert": [username, password], "columns": ["_id", "password"], "table": "users"}
-    response = requests.post('http://' + ip_port + '/api/v1/db/write', json=post_data)
+        post_data = {"insert": [username, password], "columns": ["_id", "password"], "table": "users"}
+        response = requests.post('http://' + ip_port + '/api/v1/db/write', json=post_data)
 
-    if response.status_code == 400:
-        # print("Error while inserting user to database")
-        return Response(status=400)
+        if response.status_code == 400:
+            # print("Error while inserting user to database")
+            return Response(status=400)
 
-    return Response(status=201, response='{}', mimetype='application/json')
+        return Response(status=201, response='{}', mimetype='application/json')
+
+    elif request.method == "GET":
+        post_data = {"many": 1, "table": "users", "columns": ["_id"], "where": {}}
+        response = requests.post('http://' + ip_port + '/api/v1/db/read', json=post_data)
+        res = []
+        for i in response.json():
+            res.append(i['_id'])
+        if not res:
+            return Response(status=204)
+        return jsonify(res)
 
 
 @app.route('/api/v1/users/<username>', methods=["DELETE"])
@@ -275,6 +286,18 @@ def read_from_db():
         if "timestamp" in result:
             result["timestamp"] = convert_datetime_to_timestamp(result["timestamp"])
         return jsonify(result)
+    except:
+        return Response(status=400)
+
+
+@app.route('/api/v1/db/clear', methods=["POST"])
+def clear_db():
+    collection1 = db["users"]
+    collection2 = db["rides"]
+    try:
+        collection1.delete_many({})
+        collection2.delete_many({})
+        return Response(status=200)
     except:
         return Response(status=400)
 
